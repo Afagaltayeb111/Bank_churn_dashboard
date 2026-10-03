@@ -1,0 +1,27 @@
+-- ===== DAX measures (create in a table named "_Measures") =====
+
+-- Core KPIs
+Total Customers      = DISTINCTCOUNT ( dim_customer[customer_id] )
+Churned Customers    = CALCULATE ( [Total Customers], dim_customer[churn] = 1 )
+Churn Rate           = DIVIDE ( [Churned Customers], [Total Customers] )
+Active Rate          = DIVIDE ( CALCULATE ( [Total Customers], dim_customer[is_active] = 1 ), [Total Customers] )
+Total Balance        = SUM ( dim_customer[balance] )
+Avg Balance          = AVERAGE ( dim_customer[balance] )
+Avg Credit Score     = AVERAGE ( dim_customer[credit_score] )
+
+-- Risk
+High Risk Customers  = CALCULATE ( [Total Customers], dim_customer[risk_score] >= 0.5 )
+
+Balance at Risk %    = DIVIDE ( [Balance at Risk], [Total Balance] )
+
+-- Transactions
+Tx Amount            = SUM ( fact_transactions[tx_amount] )
+Tx Count             = SUM ( fact_transactions[tx_count] )
+Avg Tx Value         = DIVIDE ( [Tx Amount], [Tx Count] )
+Tx Amount PM         = CALCULATE ( [Tx Amount], DATEADD ( dim_date[month], -1, MONTH ) )
+Tx MoM %             = DIVIDE ( [Tx Amount] - [Tx Amount PM], [Tx Amount PM] )
+Tx Amount YTD        = TOTALYTD ( [Tx Amount], dim_date[month] )
+
+-- Dynamic title / conditional formatting helper
+Churn Status Color   = SWITCH ( TRUE (), [Churn Rate] >= 0.25, "#C0392B", [Churn Rate] >= 0.18, "#E67E22", "#27AE60" )
+Page Title           = "Churn " & FORMAT ( [Churn Rate], "0.0%" ) & " | Balance at risk " & FORMAT ( [Balance at Risk] / 1000000, "0.0" ) & "M"
